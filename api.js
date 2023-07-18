@@ -1,13 +1,13 @@
+
 var express = require("express");
 const http = require('http');
 const {Server}  =require("socket.io");
 const cors=require("cors")
-var mongoose=require("mongoose")
-const grid = require('gridfs-stream');
-const {GridFsStorage} = require('multer-gridfs-storage');
+
 const multer = require('multer');
 const { Console } = require("console");
 var app = express();
+const fs = require('fs');
 app.use(express.json());
 app.use(cors());
 app.use(function (req, res, next) {
@@ -21,144 +21,76 @@ app.use(function (req, res, next) {
 });
 const port =2410;
 
-const MongoClient = require('mongodb').MongoClient;
-mongoose.connect('mongodb+srv://mdsheikh6234:Nafish%4014@cluster0.he96xlh.mongodb.net/', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-// Replace the URL and collection name with your own values
-const uri = 'mongodb+srv://mdsheikh6234:Nafish%4014@cluster0.he96xlh.mongodb.net/';
-
-const client = new MongoClient(uri);
-// Get the default connection
-const conn = mongoose.connection;
-
-// // Create the GridFS connection
-// grid.mongo = mongoose.mongo;
-let gfs, gridfsBucket;
-
-
-
-const server=http.createServer(app)
-
-
-const io = new Server(9000, {
-  cors:
+let song=[
   {
-  origin: '*'
-  ,methods:["GET","POST"] 
-  }
-  }
-  )
-  io.on("connection", (socket) => { 
-      console.log(`user connected:' ${socket.id}`);
-      socket.on('sendMessage', data => {
-        const now = new Date(); 
-        let day = now.getDate();
-       let month = now.getMonth() + 1;
-       let year = now.getFullYear();
-       const hours=now.getHours()
-       let currentDate = `${day}-${month}-${year}`;
-        var ampm = hours >= 12 ? 'pm' : 'am';
-        const hoursAndMinutes = now.getHours() + ':'+(now.getMinutes()<10?'0':'') + now.getMinutes()+ " " +ampm;
-        let arr={...data,timestamps: hoursAndMinutes,date:currentDate}
-     console.log('sendMessage',arr)
-     socket.broadcast.emit("getMessage",arr)
-  })
-  })
+    index: 0,
+    img: "https://a10.gaanacdn.com/gn_img/albums/2lV3d1WRgB/lV3dlLXx3R/size_m.jpg",
+    name: "Aqua.mp3",
+  },
+  {
+    index: 1,
+    img: "https://a10.gaanacdn.com/gn_img/albums/VdNW0Mbo5e/dNW07QV23o/size_m.jpg",
+    name: "Ziddi Dil Full Video _ MARY KOM _ Feat Priyanka Chopra _ Vishal Dadlani _ HD_256k.mp3",
+  },
+  {
+    index: 2,
+    img: "https://a10.gaanacdn.com/gn_img/albums/mGjKrP1W6z/jKrPm881W6/size_m.jpg",
+    name: "Hath Yu Thama- ( हाथ यूँ थामा तुमने फिर क्यूँ ये छोड़ दिया) Ft - Manish Joshi _ A_256k.mp3",
+  },
+  {
+    index: 3,
+    img: "https://a10.gaanacdn.com/gn_img/albums/Rz4W87v3xD/4W8eLQG1bx/size_m.jpg",
+    name: "Dil Ne - Manish Joshi _ Aditya Dev _ Official Music Video_256k.mp3",
+  },
+  {
+    index: 4,
+    img: "https://a10.gaanacdn.com/gn_img/albums/JD2KJyAbOL/2KJyBwzlbO/size_m.jpg",
+    name: "Otnicka - Peaky Blinder (lyrics) _ i am not outsider i'm a peaky blinder_256k.mp3",
+  },
+  {
+    index: 5,
+    img: "https://a10.gaanacdn.com/gn_img/albums/YoEWlabzXB/oEWlwVEy3z/size_m.jpg",
+    name: "Jiya Full Song _ Gunday _ Ranveer Singh, Priyanka Chopra _ Arijit Singh _ Sohail_256k.mp3",
+  },
+  {
+    index: 6,
+    img: "https://a10.gaanacdn.com/gn_img/albums/YoEWlwa3zX/EWlwzAAB3z/size_l.jpg",
+    name: "ACT BAD - Diddy ft. City Girls & Fabolous [Official Video]_256k.mp3",
+  },
+  {
+    index: 7,
+    img: "https://a10.gaanacdn.com/gn_img/albums/z8k3yd1Krx/k3ydyd9EKr/size_m.jpg",
+    name: "BeyoncÃ© - CUFF IT (Official Lyric Video)_256k.mp3",
+  },
+  {
+    index: 8,
+    img: "https://a10.gaanacdn.com/gn_img/shows/YoEWlabzXB/oEWllgYWzX/size_m_1685963486.jpg",
+    name: "Sam Smith, Kim Petras - Unholy (Official Music Video)_256k.mp3",
+  },
+  {
+    index: 9,
+    img: "https://m.media-amazon.com/images/M/MV5BNjA2ZTljYjUtZTg5Yy00MDg0LTk3NTItNjllOWNjZWI2OTczXkEyXkFqcGdeQXVyMTI1Mzg0ODA5._V1_FMjpg_UX604_.jpg",
+    name: "David Guetta & Bebe Rexha - I'm Good (Blue) [Official Music Video]_256k.mp3",
+  },
+  {
+    index: 10,
+    img: "https://i1.sndcdn.com/artworks-qlcLqzNMV2PHCWtS-EZwcIQ-t500x500.jpg",
+    name: "Baby Don’t Hurt",
+  },
+]
 
 
 
 
-
-
-
-conn.once('open', () => {
- 
+app.get('/song/:index',async (request, res) => {
+  const index=request.params.index
   
-  gridfsBucket = new mongoose.mongo.GridFSBucket(conn.db, {
-    bucketName: 'fs'
-  });
-  ;
-  gfs = grid(conn.db, mongoose.mongo);
-  gfs.collection('fs');
+let find=song.find((st)=>st.name==index)
 
-});
-
-const storage = new GridFsStorage({
-  url: uri,
-  options: { useNewUrlParser: true },
-  file: (request, file) => {
-      const match = ["image/png", "image/jpg"];
-
-      if(match.indexOf(file.memeType) === -1) 
-          return`${Date.now()}-blog-${file.originalname}`;
-
-      return {
-          bucketName: "photos",
-          filename: `${Date.now()}-blog-${file.originalname}`
-      }
-  }
-});
-
-async function  connectToDB(){
-  try {
-    await client.connect();
-    console.log('Connected to MongoDB!');
-
-
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-
-
-
-app.post('/login',async(req,res) => {
- const body =req.body
-
-  const collection = client.db('whatsapp').collection('user')
-  const documents = await collection.findOne({email:body.email})
-  // documents===undefined|| documents===null?await collection.insertOne(body):""
-console.log(documents)
-const adduser =(documents, socketId) =>{
-  !users.some(user => user.sub ==documents.sub) && users.push({...documents, socketId });
-  Console.log("socketId",socketId)
-  }
-console.log(body)
-
-  res.send(documents)
-
+  res.send(find);
+  console.log("index",index)
   
-  
- 
-})
-const upload = multer({ storage });
-
-app.post('/upload', upload.single('file'), (req, res) => {
-  const file = req.file;
-  console.log("mkdsamldam")
-  if (!file) return res.status(404).json("File not found");
-
-  const imageUrl = `https://music-com.onrender.com/file/${file.filename}`;
-
-  res.status(200).json(imageUrl);
 });
-app.get('/file/:filename',async (request, res) => {
-
-  try {   
-    const file = await gfs.collection("fs").findOne({ filename: request.params.filename });
-
-    const readStream = gridfsBucket.openDownloadStream(file._id);
-console.log(res)
-    readStream.pipe(res);
-  
-} catch (error) {
-    res.status(500).json({ msg: error.message });
-}
-});
-
 
 
 
